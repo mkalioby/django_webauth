@@ -1,8 +1,74 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
+    <script src="{% static 'js/jquery.js' %}"></script>
+    <script src="{% static 'js/webauthn.js' %}"></script>
+    <script type="text/javascript">
+        function getAssertion(requestOptions) {
+            console.log(requestOptions)
+            navigator.credentials.get({
+                "publicKey": requestOptions
+
+          }).then(assertion => {
+            const publicKeyCredential = {};
+
+            if ('id' in assertion) {
+              publicKeyCredential.id = assertion.id;
+            }
+            if ('type' in assertion) {
+              publicKeyCredential.type = assertion.type;
+            }
+            if ('rawId' in assertion) {
+              publicKeyCredential.rawId = assertion.rawId;
+            }
+            if (!assertion.response) {
+              throw "Get assertion response lacking 'response' attribute";
+            }
+
+            const _response = assertion.response;
+
+            publicKeyCredential.response = {
+              clientDataJSON:     _response.clientDataJSON,
+              authenticatorData:  _response.authenticatorData,
+              signature:          _response.signature,
+              userHandle:         _response.userHandle
+            };
+            console.log(publicKeyCredential)
+        }).catch(err => {
+            console.error(err)
+            })
+        }
+
+        function getUserChallenge() {
+            if (jQuery("#username").val().length == 0)
+            {
+                alert("Please fill the username first")
+                return
+            }
+            jQuery.ajax({
+                "url":"getToken",dataType:"json",
+                success: function (parameters) {
+                        const requestOptions = {};
+            _parameters = parameters;
+
+            requestOptions.challenge = new Int8Array(parameters.challenge).buffer;
+            if ('rp' in parameters) {
+              requestOptions.rp = parameters.rp;
+            }
+            if ('allowCredentials' in parameters) {
+              requestOptions.allowCredentials = credentialListConversion(parameters.allowCredentials);
+            }
+
+            console.log(requestOptions);
+
+            getAssertion(requestOptions)
+            }
+            })
+        }
+    </script>
 </head>
 <body>
 {% if invalid %}
@@ -10,9 +76,9 @@
 {% endif %}
 <form action="{% url 'login'%}" method="post">
     {% csrf_token %}
-    <input name="username" placeholder="username"/>
-    <input type="password" name="password" placeholder="password">
-    <button type="submit">Log in</button>
+    <input name="username" placeholder="username" id="username"/><a href="javascript:void(0)" onclick="getUserChallenge()">Log by web auth</a><br/>
+    <input type="password" name="password" placeholder="password"><br/>
+    <button type="submit">Log in</button><br/>
 </form>
 </body>
 </html>

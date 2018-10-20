@@ -4,6 +4,13 @@ from django.template.context import RequestContext
 from django.contrib import auth
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
+
+def logout(request):
+    auth.logout(request)
+    context = csrf(request)
+    return render_to_response("login.html", context)
+
+
 def home(request):
     return render_to_response("home.html",{},context_instance = RequestContext(request))
 def login(request):

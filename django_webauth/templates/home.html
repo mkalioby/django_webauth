@@ -120,6 +120,7 @@ var getCredentialDefaultArgs = {
 </head>
 <body onload="load()">
 <h2>Welcome {{ request.user.username }}</h2>
+<a href="{% url 'logout' %}">Log out</a>
 <div id="div"></div>
 <div id="div2"></div>
 </body>

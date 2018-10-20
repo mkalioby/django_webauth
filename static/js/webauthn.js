@@ -182,86 +182,73 @@ function registerPlatformAuthenticator() {
 
 function makeCredential(advancedOptions) {
 
-  let _options;
+    let _options;
 
-  return _fetch('/getChallenge', {
-    advanced: true,
-    advancedOptions: JSON.stringify(advancedOptions)
+    return _fetch('/getChallenge', {
+        advanced: true,
+        advancedOptions: JSON.stringify(advancedOptions)
 
-  }).then(options => {
-    const makeCredentialOptions = {};
-    _options = options;
+    }).then(options => {
+        const makeCredentialOptions = {};
+        _options = options;
 
-    makeCredentialOptions.rp = options.rp;
-    makeCredentialOptions.user = options.user;
-    makeCredentialOptions.user.id = strToBin(options.user.id);
-    makeCredentialOptions.challenge = strToBin(options.challenge);
-    makeCredentialOptions.pubKeyCredParams = options.pubKeyCredParams;
+        makeCredentialOptions.rp = options.rp;
+        makeCredentialOptions.user = options.user;
+        makeCredentialOptions.user.id = new Int8Array([options.user.id]).buffer;
+        makeCredentialOptions.challenge = new Int8Array(options.challenge).buffer;
+        makeCredentialOptions.pubKeyCredParams = options.pubKeyCredParams;
 
-    // Optional parameters
-    // if ($('#customTimeout').value != '') {
-    //   makeCredentialOptions.timeout = $('#customTimeout').value;
-    // }
-    if ('excludeCredentials' in options) {
-      makeCredentialOptions.excludeCredentials = credentialListConversion(options.excludeCredentials);
-    }
-    if ('authenticatorSelection' in options) {
-      makeCredentialOptions.authenticatorSelection = options.authenticatorSelection;
-    }
-    if ('attestation' in options) {
-      makeCredentialOptions.attestation = options.attestation;
-    }
-    if ('extensions' in options) {
-      makeCredentialOptions.extensions = options.extensions;
-    }
+        // Optional parameters
+        // if ($('#customTimeout').value != '') {
+        //   makeCredentialOptions.timeout = $('#customTimeout').value;
+        // }
+        if ('excludeCredentials' in options) {
+            makeCredentialOptions.excludeCredentials = credentialListConversion(options.excludeCredentials);
+        }
+        if ('authenticatorSelection' in options) {
+            makeCredentialOptions.authenticatorSelection = options.authenticatorSelection;
+        }
+        if ('attestation' in options) {
+            makeCredentialOptions.attestation = options.attestation;
+        }
+        if ('extensions' in options) {
+            makeCredentialOptions.extensions = options.extensions;
+        }
 
-    console.log(makeCredentialOptions);
+        console.log(makeCredentialOptions);
 
-    return navigator.credentials.create({
-      "publicKey": makeCredentialOptions
-    });
+        return navigator.credentials.create({
+            "publicKey": makeCredentialOptions
+        });
 
-  }).then(attestation => {
-    const publicKeyCredential = {};
+    }).then(attestation => {
+        const publicKeyCredential = {};
 
-    if ('id' in attestation) {
-      publicKeyCredential.id = attestation.id;
-    }
-    if ('type' in attestation) {
-      publicKeyCredential.type = attestation.type;
-    }
-    if ('rawId' in attestation) {
-      publicKeyCredential.rawId = binToStr(attestation.rawId);
-    }
-    if (!attestation.response) {
-      showErrorMsg("Make Credential response lacking 'response' attribute");
-    }
+        if ('id' in attestation) {
+            publicKeyCredential.id = attestation.id;
+        }
+        if ('type' in attestation) {
+            publicKeyCredential.type = attestation.type;
+        }
+        if ('rawId' in attestation) {
+            publicKeyCredential.rawId = binToStr(attestation.rawId);
+        }
+        if (!attestation.response) {
+            showErrorMsg("Make Credential response lacking 'response' attribute");
+        }
 
-    const response = {};
-    response.clientDataJSON = binToStr(attestation.response.clientDataJSON);
-    response.attestationObject = binToStr(attestation.response.attestationObject);
-    publicKeyCredential.response = response;
+        // const response = {};
+        // response.clientDataJSON = attestation.response.clientDataJSON;
+        // response.attestationObject = attestation.response.attestationObject;
+        // publicKeyCredential.response = response;
 
-    return _fetch('/FinishMakeCredential', {
-      data: JSON.stringify(publicKeyCredential),
-      session: _options.session.id
-    });
+        return _fetch('auth/FinishMakeCredential', {
+            data: JSON.stringify(publicKeyCredential),
+        });
 
-  }).then(parameters => {
-    console.log(parameters);
-
-    if (parameters && parameters.success) {
-      showSuccessMsg(parameters.message);
-      fetchCredentials();
-    } else {
-      throw 'Unexpected response received.';
-    }
-
-  }).catch(err => {
-    // hide('#active');
-    console.log(err.toString());
-    // showErrorMsg(`An error occurred during Make Credential operation [${err.toString()}]`);
-  });
+    }).then(data => {
+        alert(data["msg"])
+    })
 }
 
 function isUVPAA() {
@@ -290,85 +277,83 @@ function isUVPAA() {
 }
 
 function getAssertion() {
-  show('#active');
+  //   const requestOptions = {};
+  //   _parameters = parameters;
+  //
+  //   requestOptions.challenge = new Int8Array(parameters.challenge).buffer;
+  //   if ('rp' in parameters) {
+  //     requestOptions.rp = parameters.rp;
+  //   }
+  //   if ('allowCredentials' in parameters) {
+  //     requestOptions.allowCredentials = credentialListConversion(parameters.allowCredentials);
+  //   }
+  //
+  //   console.log(requestOptions);
+  //
+  //   return navigator.credentials.get({
+  //     "publicKey": requestOptions
+  //   });
+  //
+  // }).then(assertion => {
+  //   // hide('#active');
+  //
+  //   const publicKeyCredential = {};
+  //
+  //   if ('id' in assertion) {
+  //     publicKeyCredential.id = assertion.id;
+  //   }
+  //   if ('type' in assertion) {
+  //     publicKeyCredential.type = assertion.type;
+  //   }
+  //   if ('rawId' in assertion) {
+  //     publicKeyCredential.rawId = assertion.rawId;
+  //   }
+  //   if (!assertion.response) {
+  //     throw "Get assertion response lacking 'response' attribute";
+  //   }
+  //
+  //   const _response = assertion.response;
+  //
+  //   publicKeyCredential.response = {
+  //     clientDataJSON:     _response.clientDataJSON,
+  //     authenticatorData:  _response.authenticatorData,
+  //     signature:          _response.signature,
+  //     userHandle:         _response.userHandle
+  //   };
+  //   console.log(publicKeyCredential)
 
-  let _parameters;
-  _fetch('/BeginGetAssertion').then(parameters => {
-    const requestOptions = {};
-    _parameters = parameters;
 
-    requestOptions.challenge = strToBin(parameters.challenge);
-    if ($('#customTimeout').value != '') {
-      requestOptions.timeout = $('#customTimeout').value;
-    }
-    if ('rpId' in parameters) {
-      requestOptions.rpId = parameters.rpId;
-    }
-    if ('allowCredentials' in parameters) {
-      requestOptions.allowCredentials = credentialListConversion(parameters.allowCredentials);
-    }
 
-    console.log(requestOptions);
 
-    return navigator.credentials.get({
-      "publicKey": requestOptions
-    });
 
-  }).then(assertion => {
-    // hide('#active');
-
-    const publicKeyCredential = {};
-
-    if ('id' in assertion) {
-      publicKeyCredential.id = assertion.id;
-    }
-    if ('type' in assertion) {
-      publicKeyCredential.type = assertion.type;
-    }
-    if ('rawId' in assertion) {
-      publicKeyCredential.rawId = binToStr(assertion.rawId);
-    }
-    if (!assertion.response) {
-      throw "Get assertion response lacking 'response' attribute";
-    }
-
-    const _response = assertion.response;
-
-    publicKeyCredential.response = {
-      clientDataJSON:     binToStr(_response.clientDataJSON),
-      authenticatorData:  binToStr(_response.authenticatorData),
-      signature:          binToStr(_response.signature),
-      userHandle:         binToStr(_response.userHandle)
-    };
-
-    return _fetch('/FinishGetAssertion', {
-      data: JSON.stringify(publicKeyCredential),
-      session: _parameters.session.id
-    });
-
-  }).then(result => {
-    console.log(result);
-
-    if (result && result.success) {
-      showSuccessMsg(result.message);
-      if ('handle' in result) {
-        let card = document.getElementById(result.handle);
-        card.animate([{
-          backgroundColor: '#009688'
-        },{
-          backgroundColor: 'white'
-        }], {
-          duration: 2000,
-          easing: 'ease-out'
-        });
-      }
-    }
-  }).catch(err => {
-    // hide('#active');
-    console.log(err.toString());
-    showErrorMsg(`An error occurred during Assertion request [${err.toString()}]`);
-  });
-}
+//     return _fetch('/FinishGetAssertion', {
+//       data: JSON.stringify(publicKeyCredential),
+//       session: _parameters.session.id
+//     });
+//
+//   }).then(result => {
+//     console.log(result);
+//
+//     if (result && result.success) {
+//       showSuccessMsg(result.message);
+//       if ('handle' in result) {
+//         let card = document.getElementById(result.handle);
+//         card.animate([{
+//           backgroundColor: '#009688'
+//         },{
+//           backgroundColor: 'white'
+//         }], {
+//           duration: 2000,
+//           easing: 'ease-out'
+//         });
+//       }
+//     }
+//   }).catch(err => {
+//     // hide('#active');
+//     console.log(err.toString());
+//     showErrorMsg(`An error occurred during Assertion request [${err.toString()}]`);
+//   });
+ }
 
 function strToBin(str) {
   return Uint8Array.from(atob(str), c => c.charCodeAt(0));
